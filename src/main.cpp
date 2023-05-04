@@ -30,7 +30,9 @@ int simpleinterval;
 bool StartFlow; //variable to control the flow of the start of the program
 int Navojidolzina;
 int Navojisirina;
-int precnipomikstopinj = 90;
+int precnipomikstopinj;
+int vrtljaj;
+int pomikdomov;
 
 bool Clicked = false;
 
@@ -43,10 +45,13 @@ LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars
 // configure the pins connected
 #define DIR 4
 #define STEP 7
-#define MS1 10
-#define MS2 11
-#define MS3 12
-A4988 stepper(MOTOR_STEPS, DIR, STEP);
+#define DIR2 10
+#define STEP2 5
+// #define MS1 10
+// #define MS2 11
+// #define MS3 12
+A4988 rotacijski(MOTOR_STEPS, DIR, STEP);
+A4988 precni(MOTOR_STEPS, DIR2, STEP2);
 
 class Screen {
   private:
@@ -80,10 +85,10 @@ class Screen {
 //making it public so that all functions can see it 
   Screen *screens[] = {
     new Screen("Start  ", 0, 1),
-    new Screen("Dolzina", 15, 0.1),
-    new Screen("Sirina ", 3, 0.1),
-    new Screen("Navoji ", 10, 0.1),
-    new Screen("Calq   ", 0, 0.1),
+    new Screen("Dolzina", 15, 1),
+    new Screen("Sirina ", 3, 1),
+    new Screen("Pomik  ", 90, 1),
+    new Screen("Vrtl   ", 90, 1),
   };
 int menusize = 4; //0<->4
 
@@ -156,7 +161,8 @@ void setup()
   attachPCINT(digitalPinToPCINT(SW), button_press, CHANGE);
 
   // Set target motor RPM to 1RPM and microstepping to 1 (full step mode)
-  stepper.begin(15, 1);
+  rotacijski.begin(60, 4);
+  precni.begin(60, 4);
 }
 
 void select(){
@@ -174,14 +180,20 @@ void select(){
 }
 
 void exenavijanje(){
+  precnipomikstopinj = screens[3]->Value;
+  vrtljaj = screens[4]->Value;
+  //90° = cel obrat motorja 
   for (Navojisirina = screens[2]->Value; Navojisirina > 0; Navojisirina -= 1){
     for (Navojidolzina = screens[1]->Value; Navojidolzina > 0; Navojidolzina -= 1){
       //stepper.rotate(360); //rotacijski 
-      stepper.rotate(precnipomikstopinj); //prečni
+      precni.rotate(precnipomikstopinj); //prečni
+      rotacijski.rotate(vrtljaj); 
+      pomikdomov += precnipomikstopinj; 
     }
     precnipomikstopinj = ~(precnipomikstopinj-1); //eniški kompliment, -1 --> nasprotna vrednost (pomik prečne osi v drugo smer kot prej)
   }
   screens[0]->Value = 0;
+  precni.rotate(~(pomikdomov-1));
 }
 
 void loop(){
@@ -196,4 +208,10 @@ select();
   if((screens[0]->Value)>0){ //if start is more than 0
       exenavijanje();
     }
+  
+
+}
+
+void manualcontroll(){
+  
 }
