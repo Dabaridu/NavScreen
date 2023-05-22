@@ -209,6 +209,9 @@ select();
       exenavijanje();
     }
   
+  if((counter == 5)&&(Clicked == true)){ //if start is more than 0
+      manualcontrollPomikanje();
+    }
 
 }
 
