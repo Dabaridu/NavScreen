@@ -56,10 +56,10 @@ A4988 precni(MOTOR_STEPS, DIR2, STEP2);
 class Screen {
   private:
     String Label;
-    float increment;
   
   public:
     float Value;
+    float increment;
     Screen(String Label, float Value, float increment){
       this -> Label = Label;
       this -> Value = Value;
@@ -89,8 +89,10 @@ class Screen {
     new Screen("Sirina ", 3, 1),
     new Screen("Pomik  ", 90, 1),
     new Screen("Vrtl   ", 90, 1),
+    new Screen("Premik ",0,10),
+    new Screen("Zavrti ",0,10),
   };
-int menusize = 4; //0<->4
+int menusize = 6; //0<->4
 
 
 void button_press(){
@@ -165,7 +167,7 @@ void setup()
   precni.begin(60, 4);
 }
 
-void select(){
+void selectpointer(){
   if (Clicked == true){
     lcd.setCursor(0,0);
     lcd.print(">");
@@ -196,25 +198,68 @@ void exenavijanje(){
   precni.rotate(~(pomikdomov-1));
 }
 
-void loop(){
-//    screens[counter].draw();
+void screendraw(){
+  screens[counter]->draw();
+  selectpointer();
+
   if (millis() - simpleinterval > 1500){
     lcd.clear();
+    simpleinterval = millis();
   }
-simpleinterval = millis();
-screens[counter]->draw();
-select();
+}
+
+void manualcontrollPomikanje(){
+  int premik;
+  int prejpemik;
+
+  while(Clicked == false){
+    screendraw();
+    premik = screens[counter]->Value;
+    
+    if (premik > prejpemik){
+      precni.rotate(screens[counter]->increment);
+    }
+    else if(premik < prejpemik){
+      precni.rotate(-(screens[counter]->increment));
+    }
+
+    prejpemik = premik;
+  }
+}
+
+void manualcontrollVrtenje(){
+  int premik;
+  int prejpemik;
+
+  while(Clicked == false){
+    screendraw();
+    premik = screens[counter]->Value;
+    
+    if (premik > prejpemik){
+      precni.rotate(screens[counter]->increment);
+    }
+    else if(premik < prejpemik){
+      precni.rotate(-(screens[counter]->increment));
+    }
+
+    prejpemik = premik;
+  }
+}
+
+void loop(){
+//    screens[counter].draw();
+  screendraw();
 
   if((screens[0]->Value)>0){ //if start is more than 0
       exenavijanje();
-    }
+  }
   
-  if((counter == 5)&&(Clicked == true)){ //if start is more than 0
+  //--------------------------Enter manual move mode------------------------------
+  if((counter == 5)&&(Clicked == false)){
       manualcontrollPomikanje();
-    }
+  }
 
-}
-
-void manualcontroll(){
-  
+  if((counter == 6)&&(Clicked == false)){
+      manualcontrollVrtenje();
+  }
 }
