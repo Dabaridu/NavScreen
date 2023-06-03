@@ -36,6 +36,8 @@ int pomikdomov;
 
 bool Clicked = false;
 
+int DrawType;
+
 //Classes are here
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 //leave clear
@@ -66,13 +68,14 @@ class Screen {
       this -> increment = increment;
     }
   
-  void draw(){
+  void drawLabel(){
     lcd.setCursor(1,0);
     lcd.print(Label);
+  }
+  void drawValue(){
     lcd.setCursor(1,1);
     lcd.print(Value);
   }
-
   void add(){
     Value = Value + increment;
   }
@@ -87,7 +90,7 @@ class Screen {
     new Screen("Start  ", 0, 1),
     new Screen("Dolzina", 15, 1),
     new Screen("Sirina ", 3, 1),
-    new Screen("Pomik  ", 90, 1),
+    new Screen("Pomik  ", 10, 1),
     new Screen("Vrtl   ", 90, 1),
     new Screen("Premik ",0,10),
     new Screen("Zavrti ",0,10),
@@ -181,7 +184,7 @@ void selectpointer(){
   }
 }
 
-void exenavijanje(){
+void exenavijanje(){ //program za navijanje tuljave (ne spreminjaj po nepotrebi)
   precnipomikstopinj = screens[3]->Value;
   vrtljaj = screens[4]->Value;
   //90° = cel obrat motorja 
@@ -198,8 +201,9 @@ void exenavijanje(){
   precni.rotate(~(pomikdomov-1));
 }
 
-void screendraw(){
-  screens[counter]->draw();
+void screendraw(){ //draw all basic stuff for menu GUI
+  screens[counter]->drawLabel();
+  screens[counter]->drawValue();
   selectpointer();
 
   if (millis() - simpleinterval > 1500){
@@ -211,18 +215,15 @@ void screendraw(){
 void manualcontrollPomikanje(){
   int premik;
   int prejpemik;
-
   while(Clicked == false){
     screendraw();
     premik = screens[counter]->Value;
-    
     if (premik > prejpemik){
       precni.rotate(screens[counter]->increment);
     }
     else if(premik < prejpemik){
       precni.rotate(-(screens[counter]->increment));
     }
-
     prejpemik = premik;
   }
 }
@@ -230,36 +231,74 @@ void manualcontrollPomikanje(){
 void manualcontrollVrtenje(){
   int premik;
   int prejpemik;
-
   while(Clicked == false){
     screendraw();
     premik = screens[counter]->Value;
-    
     if (premik > prejpemik){
-      precni.rotate(screens[counter]->increment);
+      rotacijski.rotate(screens[counter]->increment);
     }
     else if(premik < prejpemik){
-      precni.rotate(-(screens[counter]->increment));
+      rotacijski.rotate(-(screens[counter]->increment));
     }
-
     prejpemik = premik;
+  }
+}
+
+void start(){
+  int premik;
+  int prejpemik;
+  bool Alfred; 
+  while(Clicked){ //clicked je "interupt"... to zna mogoče delat
+        premik = screens[counter]->Value;
+    if (premik > prejpemik){
+      //pogoj če zavrtimo v desno
+      Alfred = true;
+      lcd.setCursor(1,1);
+      lcd.print("TRUE  ");
+    }
+    else if(premik < prejpemik){
+      //pogoj če zavrtimo v levo
+      Alfred = false; 
+      lcd.setCursor(1,1);
+      lcd.print("FALSE ");
+    }
+    prejpemik = premik;
+  }
+  if (Alfred == true){
+    lcd.setCursor(1,1);
+    lcd.print("Navijam");
+    exenavijanje();
   }
 }
 
 void loop(){
 //    screens[counter].draw();
+
   screendraw();
 
-  if((screens[0]->Value)>0){ //if start is more than 0
-      exenavijanje();
-  }
-  
-  //--------------------------Enter manual move mode------------------------------
-  if((counter == 5)&&(Clicked == false)){
+//special conditions for screens 
+  if (Clicked == true){
+    switch(counter){//preveri v katerem meniju se trenutno nahajamo
+      case 1: 
+      start();
+      break;
+      case 2:
+      //mogoče dodaj še za ročne pomike osi 
+      break;
+      case 5:
       manualcontrollPomikanje();
+      break;
+      case 6:
+      manualcontrollVrtenje();
+      break;
+    }
   }
 
-  if((counter == 6)&&(Clicked == false)){
-      manualcontrollVrtenje();
-  }
+  //--------------------------Enter manual move mode------------------------------
+  // if((counter == 5)&&(Clicked == false)){
+  //     manualcontrollPomikanje();
+  // }
+  // if((counter == 6)&&(Clicked == false)){
+  //     manualcontrollVrtenje();
+  // }
 }
