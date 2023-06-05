@@ -7,6 +7,7 @@
 #include <LiquidCrystal_I2C.h>
 #include "PinChangeInterrupt.h"
 #include "A4988.h"
+//#include "EEPROM.h"
 
 //constants are here 
 #define LCDcolums 2
@@ -38,6 +39,11 @@ bool Clicked = false;
 
 int DrawType;
 
+int menusize = -1; // starts counting from 0-X
+
+// bool Value;
+// bool Label;
+
 //Classes are here
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 //leave clear
@@ -66,6 +72,7 @@ class Screen {
       this -> Label = Label;
       this -> Value = Value;
       this -> increment = increment;
+      menusize ++;
     }
   
   void drawLabel(){
@@ -90,12 +97,12 @@ class Screen {
     new Screen("Start  ", 0, 1),
     new Screen("Dolzina", 15, 1),
     new Screen("Sirina ", 3, 1),
-    new Screen("Pomik  ", 10, 1),
-    new Screen("Vrtl   ", 90, 1),
+    new Screen("Pomik  ", 10, 1), 
+    new Screen("Vrtl   ", 90, 1), //90 = 360°
     new Screen("Premik ",0,10),
     new Screen("Zavrti ",0,10),
   };
-int menusize = 6; //0<->4
+//int menusize = 6; //0<->4
 
 
 void button_press(){
@@ -201,22 +208,28 @@ void exenavijanje(){ //program za navijanje tuljave (ne spreminjaj po nepotrebi)
   precni.rotate(~(pomikdomov-1));
 }
 
-void screendraw(){ //draw all basic stuff for menu GUI
-  screens[counter]->drawLabel();
-  screens[counter]->drawValue();
-  selectpointer();
+void screendraw(bool Lab, bool Val){ //draw all basic stuff for menu GUI
 
-  if (millis() - simpleinterval > 1500){
+  if (millis() - simpleinterval > 1500){// vedno na prvem mestu ker logični razlogi
     lcd.clear();
     simpleinterval = millis();
   }
+
+  if (Val == true){
+    screens[counter]->drawValue();
+  }
+  if (Lab == true){
+    screens[counter]->drawLabel();
+  }
+
+  selectpointer();
 }
 
 void manualcontrollPomikanje(){
   int premik;
   int prejpemik;
   while(Clicked == false){
-    screendraw();
+    screendraw(true, true);
     premik = screens[counter]->Value;
     if (premik > prejpemik){
       precni.rotate(screens[counter]->increment);
@@ -232,7 +245,7 @@ void manualcontrollVrtenje(){
   int premik;
   int prejpemik;
   while(Clicked == false){
-    screendraw();
+    screendraw(true, true);
     premik = screens[counter]->Value;
     if (premik > prejpemik){
       rotacijski.rotate(screens[counter]->increment);
@@ -248,7 +261,12 @@ void start(){
   int premik;
   int prejpemik;
   bool Alfred; 
-  while(Clicked){ //clicked je "interupt"... to zna mogoče delat
+
+  int rem = screens[counter]->Value; //zapomni si kje je vstopil
+
+  screendraw(true, false);
+
+  while(Clicked == false){ //clicked je "interupt"... to zna mogoče delat
         premik = screens[counter]->Value;
     if (premik > prejpemik){
       //pogoj če zavrtimo v desno
@@ -269,21 +287,21 @@ void start(){
     lcd.print("Navijam");
     exenavijanje();
   }
+
+  screens[counter]->Value = rem; //iztopi na mestu kjer je vstopil
 }
 
 void loop(){
 //    screens[counter].draw();
-
-  screendraw();
+  screendraw(true, true);
 
 //special conditions for screens 
-  if (Clicked == true){
+  if (Clicked == false){
     switch(counter){//preveri v katerem meniju se trenutno nahajamo
-      case 1: 
+      case 0: 
       start();
       break;
       case 2:
-      //mogoče dodaj še za ročne pomike osi 
       break;
       case 5:
       manualcontrollPomikanje();
@@ -294,7 +312,7 @@ void loop(){
     }
   }
 
-  //--------------------------Enter manual move mode------------------------------
+  // //--------------------------Enter manual move mode------------------------------
   // if((counter == 5)&&(Clicked == false)){
   //     manualcontrollPomikanje();
   // }
