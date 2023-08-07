@@ -98,6 +98,7 @@ class Screen {
 int menusize = 6; //0<->4
 
 
+
 void button_press(){
   int buttonVal = digitalRead(SW);
   //If we detect LOW signal, button is pressed
@@ -162,10 +163,10 @@ void setup()
   // Call encoder_value() when any high/low changed seen
   // on interrupt 0 (pin 2), or interrupt 1 (pin 3)
   attachInterrupt(0, encoder_value, CHANGE);
-  attachInterrupt(1, encoder_value, CHANGE);
+  attachInterrupt(1, encoder_value, CHANGE); //dva interrupt pina, mogoče se dvakrat kličeta med izvržbo
   attachPCINT(digitalPinToPCINT(SW), button_press, CHANGE);
 
-  // Set target motor RPM to 1RPM and microstepping to 1 (full step mode)
+  // Set target motor RPM to 1RPM and microstepping to 1 (full step mode) 4--> 16stepmode
   rotacijski.begin(60, 4);
   precni.begin(60, 4);
 }
